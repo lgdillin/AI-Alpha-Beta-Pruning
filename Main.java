@@ -43,11 +43,14 @@ class Main {
     }
   }
 
-  int bestMove(boolean light) {
+  String bestMove(ChessState s, boolean light, int lookAhead) {
 
   }
 
-
+  static void validateHumanMove(String move) {
+    if(move.length() != 4) throw new RuntimeException("Move is too long");
+    
+  }
 
 
   public static void main(String[] args) {
@@ -59,23 +62,23 @@ class Main {
     if(Integer.parseInt(args[1]) < 0 || Integer.parseInt(args[1]) > 5) throw new IllegalArgumentException("args[1] out of bounds");
 
     // NOTE: light is on the left, dark is on the right
-    int depthLeft;
-    boolean leftHuman = false;
+    int depthLight;
+    boolean lightHuman = false;
     if(args[0] == "0") {
-      leftHuman = true;
+      lightHuman = true;
       // Left player is human
     } else {
       // Assign left player an AI difficulty
-      depthLeft = Integer.parseInt(args[0]);
+      depthLight = Integer.parseInt(args[0]);
     }
 
-    int depthRight;
-    boolean rightHuman = false;
+    int depthDark;
+    boolean darkHuman = false;
     if(args[1] == "0") {
-      rightHuman = true;
+      darkHuman = true;
       // Right player is human
     } else {
-      depthRight = Integer.parseInt(args[1]);
+      depthDark = Integer.parseInt(args[1]);
       // Assign right player AI difficulty
     }
 
@@ -95,20 +98,22 @@ class Main {
       s.printBoard(System.out);
 
       if(lightPlayer) {
-        if(leftHuman) {
+        if(lightHuman) {
           System.out.print("Light move: ");
           move = keyboard.nextLine();
         } else {
-          main.bestMove(lightPlayer);
+          move = main.bestMove(s, lightPlayer, depthLight);
         }
       } else {
-        if(rightHuman) {
+        if(darkHuman) {
           System.out.print("Light move: ");
           move = keyboard.nextLine();
         } else {
-          main.bestMove(lightPlayer);
+          move = main.bestMove(s, lightPlayer, depthDark);
         }
       }
+
+
     }
     //ChessState.ChessMove m = new ChessState.ChessMove(); // for the light player
 
