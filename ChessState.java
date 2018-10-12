@@ -404,57 +404,34 @@ class ChessState {
 
 
 	public static void main(String[] args) {
-    // Parse command line arguments
-    if(args.length != 2) throw new IllegalArgumentException("Wrong number of args");
-    if(args[0].length() != 1) throw new IllegalArgumentException("invalid arg length");
-    if(args[0].length() != 1) throw new IllegalArgumentException("invalid arg length");
-    if(Integer.parseInt(args[0]) < 0 || Integer.parseInt(args[0]) > 5) throw new IllegalArgumentException("args[0] out of bounds");
-    if(Integer.parseInt(args[1]) < 0 || Integer.parseInt(args[1]) > 5) throw new IllegalArgumentException("args[1] out of bounds");
-
-    // NOTE: light is on the left, dark is on the right
-    int depthLeft;
-    boolean leftHuman = false;
-    if(args[0] == "0") {
-      leftHuman = true;
-      // Left player is human
-    } else {
-      // Assign left player an AI difficulty
-      depthLeft = Integer.parseInt(args[0]);
-    }
-
-    int depthRight;
-    boolean rightHuman = false;
-    if(args[1] == "0") {
-      rightHuman = true;
-      // Right player is human
-    } else {
-      depthRight = Integer.parseInt(args[1]);
-      // Assign right player AI difficulty
-    }
-
-    // Game usage
-    Random r = new Random(123456);
-    ChessState s = new ChessState();
-    s.resetBoard();
-    ChessMoveIterator it = s.iterator(true); // Iterate over all valid moves
-    ChessState.ChessMove m = new ChessState.ChessMove(); // for the light player
-
-    // Gameloop
-    while(it.hasNext()) {
-      m = it.next();
-    }
+    // // Game usage
+    // Random r = new Random(123456);
+    // ChessState s = new ChessState();
+    // s.resetBoard();
+    // ChessMoveIterator it = s.iterator(true); // Iterate over all valid moves
+    // ChessState.ChessMove m = new ChessState.ChessMove(); // for the light player
+		//
+    // // Gameloop
+    // while(it.hasNext()) {
+    //   m = it.next();
+    // }
+		//
+		//
+    // s.move(m.xSource, m.ySource, m.xDest, m.yDest);
+    // int h = s.heuristic(r);
+    // s.printBoard(System.out);
 
 
-    s.move(m.xSource, m.ySource, m.xDest, m.yDest);
-    int h = s.heuristic(r);
-    s.printBoard(System.out);
-
-
-		// ChessState s = new ChessState();
-		// s.resetBoard();
-		// s.printBoard(System.out);
-		// System.out.println();
-		// s.move(1/*B*/, 0/*1*/, 2/*C*/, 2/*3*/);
-		// s.printBoard(System.out);
+		ChessState s = new ChessState();
+		s.resetBoard();
+		s.printBoard(System.out);
+		System.out.println();
+		s.move(1/*B*/, 0/*1*/, 2/*C*/, 2/*3*/);
+		s.printBoard(System.out);
+		ChessState.ChessMoveIterator it = s.iterator(true);
+		while(it.hasNext()) {
+			ChessState.ChessMove m = it.next();
+			System.out.println(m.xSource + " " + m.ySource);
+		}
 	}
 }
