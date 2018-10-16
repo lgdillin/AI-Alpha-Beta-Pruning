@@ -4,51 +4,59 @@ import java.util.ArrayList;
 
 
 class Main {
+  Random r;
 
-  // int alphaBetaPruning(ChessState s, int depth, int alpha, int beta, boolean maximizeUtility) {
-  //   int score = checkState(g);
-  //   if(score == 10) return score - depth;
-  //   else if(score == -10) return score + depth;
-  //   else if(score != 3) return 0; // Tie game
-  //
-  //   int bestValue;
-  //   if(maximizeUtility) {
-  //     bestValue = -10000; // Supposed to be neg inf
-  //
-  //     for(int i = 0; i < g.board.length; ++i) {
-  //       if(g.board[i] == Character.forDigit(i + 1, 10)) {
-  //         g.board[i] = COMPUTER_MOVE;
-  //         bestValue = Math.max(bestValue, alphaBetaPruning(g, depth + 1, alpha, beta, !maximizeUtility));
-  //         g.board[i] = Character.forDigit(i + 1, 10);
-  //
-  //         alpha = Math.max(alpha, bestValue);
-  //         if(alpha >= beta) break;
-  //       }
-  //     }
-  //     return bestValue;
-  //
-  //   } else { // Minimizing player
-  //     bestValue = 10000; // positive inf
-  //     for(int i = 0; i < g.board.length; ++i) {
-  //       if(g.board[i] == Character.forDigit(i + 1, 10)) {
-  //         g.board[i] = HUMAN_MOVE;
-  //         bestValue = Math.min(bestValue, alphaBetaPruning(g, depth + 1, alpha, beta, !maximizeUtility));
-  //         g.board[i] = Character.forDigit(i + 1, 10);
-  //
-  //         beta = Math.min(beta, bestValue);
-  //         if(alpha >= beta) break;
-  //       }
-  //     }
-  //     return bestValue;
-  //
-  //   }
-  // }
+  Main() {
+    r = new Random(123456);
+  }
 
-  String bestMove(ChessState s, boolean light, int lookAhead) {
+  int alphaBetaPruning(ChessState s, int depth, int alpha, int beta, boolean maximizeUtility) {
+    int score = s.heuristic(r);
+    if(depth == 0) return score;
+    // if(score == 10) return score - depth;
+    // else if(score == -10) return score + depth;
+    // else if(score != 3) return 0; // Tie game
+
+    int bestValue;
+    if(maximizeUtility) {
+      bestValue = -10000; // Supposed to be neg inf
+
+      for(int i = 0; i < g.board.length; ++i) {
+        if(g.board[i] == Character.forDigit(i + 1, 10)) {
+          g.board[i] = COMPUTER_MOVE;
+          bestValue = Math.max(bestValue, alphaBetaPruning(g, depth - 1, alpha, beta, !maximizeUtility));
+          g.board[i] = Character.forDigit(i + 1, 10);
+
+          alpha = Math.max(alpha, bestValue);
+          if(alpha >= beta) break;
+        }
+      }
+      return bestValue;
+
+    } else { // Minimizing player
+      bestValue = 10000; // positive inf
+      for(int i = 0; i < g.board.length; ++i) {
+        if(g.board[i] == Character.forDigit(i + 1, 10)) {
+          g.board[i] = HUMAN_MOVE;
+          bestValue = Math.min(bestValue, alphaBetaPruning(g, depth - 1, alpha, beta, !maximizeUtility));
+          g.board[i] = Character.forDigit(i + 1, 10);
+
+          beta = Math.min(beta, bestValue);
+          if(alpha >= beta) break;
+        }
+      }
+      return bestValue;
+
+    }
+  }
+
+  // Entry point for alpha-beta pruning
+  int[] bestMove(ChessState s, boolean light, int lookAhead) {
     int alpha = -10000;
     int beta = 10000;
     int maxUtility = -1000;
-    int maxMove = -1;
+    int[] maxMove = new int[4];
+    int[] move = new int[4];
 
     // Its easier just to create a deep copy for the recursion
     ChessState movePlan = new ChessState(s);
@@ -57,28 +65,34 @@ class Main {
     while(it.hasNext()) {
       // Get the next piece
       ChessState.ChessMove m = it.next();
+      // Find all possible moves
       ArrayList<Integer> moves = movePlan.moves(m.xSource, m.ySource);
-      for(int i = 0; i < moves.size(); ++i) {
-        System.out.println(moves.get(i));
-        break;
+      move[0] = m.xSource;
+      move[1] = m.ySource;
+
+      // play the game and get the score for that move
+      int utility = alphaBetaPruning(movePlan, lookAhead, alpha, beta, false);
+
+      // put it back in its place
+      move[2] = moves.get(0);
+      move[3] = moves.get(1);
+
+      if(utility > maxUtility) {
+        // save the best move
+        maxMove[0] = move[0];
+        maxMove[1] = move[1];
+        maxMove[2] = move[2];
+        maxMove[3] = move[3];
+        maxUtility = utility;
       }
       break;
-      // Move it
-      // get the score
-      // put it back in its place
-
-      //int utility = alphaBetaPruning(movePlan, lookAhead, alpha, beta, false);
-
-      // if(utility > maxUtility) {
-      //   // save the best move
-      //   maxUtility = utility;
-      // }
 
     }
     // return the best move
-    return "";
+    return maxMove;
   }
 
+  // parse the input from the human and ensure it is a valid move
   static boolean validateHumanMove(String move) {
     String validator = "abcdefgh";
     boolean xMove1 = false;
@@ -103,14 +117,23 @@ class Main {
     return true;
   }
 
+  // Translate the move from a char string to an array of positions
   static int[] moveTranslation(String move) {
     if(!validateHumanMove(move)) return null;
 
+    // Translate the numbers
     int[] translatedMove = new int[4];
+
     translatedMove[1] = Character.getNumericValue(move.charAt(1)) - 1;
     translatedMove[3] = Character.getNumericValue(move.charAt(3)) - 1;
 
+    // Translate the Characters
+    translatedMove[0] = Character.getNumericValue(move.charAt(0)) - 10;
+    translatedMove[2] = Character.getNumericValue(move.charAt(2)) - 10;
 
+    //for(int i = 0; i < 4; ++i) { System.out.print(translatedMove.get(i) + " "); } System.out.println();
+
+    return translatedMove;
   }
 
 
@@ -154,27 +177,27 @@ class Main {
     // Game Loop
     ChessState.ChessMove m;
     boolean lightPlayer = true;
-    String move;
+    int[] move = null;
     while(true) {
       s.printBoard(System.out);
 
       if(lightPlayer) {
         if(lightHuman) {
           System.out.print("Light move: ");
-          move = keyboard.nextLine();
+          move = Main.moveTranslation(keyboard.nextLine());
         } else {
           move = main.bestMove(s, lightPlayer, depthLight);
         }
       } else {
         if(darkHuman) {
-          System.out.print("Light move: ");
-          move = keyboard.nextLine();
+          System.out.print("Dark move: ");
+          move = Main.moveTranslation(keyboard.nextLine());
         } else {
           move = main.bestMove(s, lightPlayer, depthDark);
         }
       }
-      s.move(move.charAt(0), move.charAt(1), move.charAt(2), move.charAt(3));
-
+      s.move(move[0], move[1], move[2], move[3]);
+      lightPlayer = !lightPlayer;
 
     }
     //ChessState.ChessMove m = new ChessState.ChessMove(); // for the light player
