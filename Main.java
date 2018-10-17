@@ -21,6 +21,8 @@ class Main {
     if(maximizeUtility) {
       bestValue = -10000; // Supposed to be neg inf
 
+      // Change this line to iterate through all movable pieces
+      // Then we need to try all moves for each piece
       for(int i = 0; i < g.board.length; ++i) {
         if(g.board[i] == Character.forDigit(i + 1, 10)) {
           g.board[i] = COMPUTER_MOVE;
