@@ -10,42 +10,52 @@ class Main {
     r = new Random(123456);
   }
 
-  int alphaBetaPruning(ChessState s, int depth, int alpha, int beta, boolean maximizeUtility) {
+  int alphaBetaPruning(ChessState s, int depth, int alpha, int beta, boolean maximizeUtility, boolean light) {
     int score = s.heuristic(r);
-    if(depth == 0) return score;
-    // if(score == 10) return score - depth;
-    // else if(score == -10) return score + depth;
-    // else if(score != 3) return 0; // Tie game
+    if(depth == 0 || s.gameOver()) return score;
 
     int bestValue;
     if(maximizeUtility) {
-      bestValue = -10000; // Supposed to be neg inf
+      bestValue = -1000000; // Supposed to be neg inf
 
-      // Change this line to iterate through all movable pieces
-      // Then we need to try all moves for each piece
-      for(int i = 0; i < g.board.length; ++i) {
-        if(g.board[i] == Character.forDigit(i + 1, 10)) {
-          g.board[i] = COMPUTER_MOVE;
-          bestValue = Math.max(bestValue, alphaBetaPruning(g, depth - 1, alpha, beta, !maximizeUtility));
-          g.board[i] = Character.forDigit(i + 1, 10);
+      // Find all movable pieces for dark
+      ChessState.ChessMoveIterator it = s.iterator(light);
+      while(it.hasNext()) {
+        // Get the next piece
+        ChessState.ChessMove m = it.next();
 
-          alpha = Math.max(alpha, bestValue);
-          if(alpha >= beta) break;
-        }
+        // Deep copy the board
+        ChessState newBoard = new ChessState(s);
+
+        // Move the next piece to its legal destination
+        newBoard.move(m.xSource, m.ySource, m.xDest, m.yDest);
+
+        bestValue = Math.max(bestValue, alphaBetaPruning(newBoard, depth - 1, alpha, beta, !maximizeUtility, !light));
+
+        // compare to our level
+        alpha = Math.max(alpha, bestValue);
+        if(alpha >= beta) break;
       }
       return bestValue;
 
     } else { // Minimizing player
-      bestValue = 10000; // positive inf
-      for(int i = 0; i < g.board.length; ++i) {
-        if(g.board[i] == Character.forDigit(i + 1, 10)) {
-          g.board[i] = HUMAN_MOVE;
-          bestValue = Math.min(bestValue, alphaBetaPruning(g, depth - 1, alpha, beta, !maximizeUtility));
-          g.board[i] = Character.forDigit(i + 1, 10);
+      bestValue = 1000000; // positive inf
 
-          beta = Math.min(beta, bestValue);
-          if(alpha >= beta) break;
-        }
+      // Find all movable pieces for light
+      ChessState.ChessMoveIterator it = s.iterator(light);
+      while(it.hasNext()) {
+        ChessState.ChessMove m = it.next(); // Get the next piece
+
+        // Deep copy the board
+        ChessState newBoard = new ChessState(s);
+
+        // Move the next piece to its legal destination
+        newBoard.move(m.xSource, m.ySource, m.xDest, m.yDest);
+
+        bestValue = Math.min(bestValue, alphaBetaPruning(newBoard, depth - 1, alpha, beta, !maximizeUtility, !light));
+
+        beta = Math.min(beta, bestValue);
+        if(alpha >= beta) break;
       }
       return bestValue;
 
@@ -53,42 +63,31 @@ class Main {
   }
 
   // Entry point for alpha-beta pruning
-  int[] bestMove(ChessState s, boolean light, int lookAhead) {
-    int alpha = -10000;
-    int beta = 10000;
-    int maxUtility = -1000;
-    int[] maxMove = new int[4];
-    int[] move = new int[4];
+  ChessState.ChessMove bestMove(ChessState s, boolean light, int lookAhead) {
+    int alpha = -1000000;
+    int beta = 1000000;
+    int maxUtility = -100000;
+    ChessState.ChessMove maxMove = new ChessState.ChessMove();
 
-    // Its easier just to create a deep copy for the recursion
-    ChessState movePlan = new ChessState(s);
-
-    ChessState.ChessMoveIterator it = movePlan.iterator(false);
+    ChessState.ChessMoveIterator it = s.iterator(light);
     while(it.hasNext()) {
       // Get the next piece
       ChessState.ChessMove m = it.next();
-      // Find all possible moves
-      ArrayList<Integer> moves = movePlan.moves(m.xSource, m.ySource);
-      move[0] = m.xSource;
-      move[1] = m.ySource;
 
-      // play the game and get the score for that move
-      int utility = alphaBetaPruning(movePlan, lookAhead, alpha, beta, false);
+      // Its easier just to create a deep copy for the recursion
+      // Than to try to put pieces back
+      ChessState newBoard = new ChessState(s);
 
-      // put it back in its place
-      move[2] = moves.get(0);
-      move[3] = moves.get(1);
+      // Move the piece to its next legal position
+      newBoard.move(m.xSource, m.ySource, m.xDest, m.yDest);
+
+      // Test for utility
+      int utility = alphaBetaPruning(newBoard, lookAhead, alpha, beta, false, !light);
 
       if(utility > maxUtility) {
-        // save the best move
-        maxMove[0] = move[0];
-        maxMove[1] = move[1];
-        maxMove[2] = move[2];
-        maxMove[3] = move[3];
+        maxMove = m;
         maxUtility = utility;
       }
-      break;
-
     }
     // return the best move
     return maxMove;
@@ -174,39 +173,69 @@ class Main {
     Scanner keyboard = new Scanner(System.in);
     ChessState s = new ChessState(); // Give us a new board
     s.resetBoard(); // Prepare the board for play
-    ChessState.ChessMoveIterator it = s.iterator(true); // Iterator for valid moves
 
     // Game Loop
-    ChessState.ChessMove m;
     boolean lightPlayer = true;
-    int[] move = null;
+    boolean gameOver = false;
     while(true) {
       s.printBoard(System.out);
 
+      ChessState.ChessMove move = new ChessState.ChessMove();
       if(lightPlayer) {
         if(lightHuman) {
           System.out.print("Light move: ");
-          move = Main.moveTranslation(keyboard.nextLine());
+          int[] tempMove = Main.moveTranslation(keyboard.nextLine());
+          move.xSource = tempMove[0];
+          move.ySource = tempMove[1];
+          move.xDest = tempMove[2];
+          move.yDest = tempMove[3];
+
+          // Handle invalid moves
+          try {
+            gameOver = s.move(move.xSource, move.ySource, move.xDest, move.yDest);
+            lightPlayer = !lightPlayer;
+          } catch(Exception e) {
+            System.out.println("Invalid move");
+          }
         } else {
           move = main.bestMove(s, lightPlayer, depthLight);
+          gameOver = s.move(move.xSource, move.ySource, move.xDest, move.yDest);
+          lightPlayer = !lightPlayer;
         }
       } else {
         if(darkHuman) {
           System.out.print("Dark move: ");
-          move = Main.moveTranslation(keyboard.nextLine());
+          int[] tempMove = Main.moveTranslation(keyboard.nextLine());
+          move.xSource = tempMove[0];
+          move.ySource = tempMove[1];
+          move.xDest = tempMove[2];
+          move.yDest = tempMove[3];
+
+          // Handle invalid moves
+          try {
+            gameOver = s.move(move.xSource, move.ySource, move.xDest, move.yDest);
+            lightPlayer = !lightPlayer;
+          } catch(Exception e) {
+            System.out.println("Invalid move");
+          }
         } else {
           move = main.bestMove(s, lightPlayer, depthDark);
+          gameOver = s.move(move.xSource, move.ySource, move.xDest, move.yDest);
+          lightPlayer = !lightPlayer;
         }
       }
-      s.move(move[0], move[1], move[2], move[3]);
-      lightPlayer = !lightPlayer;
 
+      if(gameOver) break;
     }
-    //ChessState.ChessMove m = new ChessState.ChessMove(); // for the light player
 
-    //s.move(m.xSource, m.ySource, m.xDest, m.yDest);
-    //int h = s.heuristic(r);
-
-
+    System.out.println();
+    System.out.println();
+    s.printBoard(System.out);
+    if(!lightPlayer) {  // Since the flag switches after a turn, we need to invert the victory speech
+      System.out.println("Light wins!");
+    } else {
+      System.out.println("Dark wins!");
+    }
   }
+
 }

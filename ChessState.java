@@ -16,6 +16,8 @@ class ChessState {
 	public static final int WhiteMask = 8;
 	public static final int AllMask = 15;
 
+	static boolean gameOver = false;
+
 	int[] m_rows;
 
 	ChessState() {
@@ -35,6 +37,10 @@ class ChessState {
 
 	boolean isWhite(int col, int row) {
 		return (((m_rows[row] >> (4 * col)) & WhiteMask) > 0 ? true : false);
+	}
+
+	boolean gameOver() {
+		return gameOver;
 	}
 
 	/// Sets the piece at location (col, row). If piece is None, then it doesn't
@@ -282,6 +288,8 @@ class ChessState {
 		setPiece(xDest, yDest, p, white);
 		setPiece(xSrc, ySrc, None, true);
 		if(target == King) {
+			gameOver = true;
+			
 			// If you take the opponent's king, remove all of the opponent's pieces. This
 			// makes sure that look-ahead strategies don't try to look beyond the end of
 			// the game (example: sacrifice a king for a king and some other piece.)
