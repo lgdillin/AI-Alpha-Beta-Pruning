@@ -202,6 +202,14 @@ class Main {
           gameOver = s.move(move.xSource, move.ySource, move.xDest, move.yDest);
           lightPlayer = !lightPlayer;
         }
+
+        if(gameOver) {
+          System.out.println();
+          System.out.println();
+          s.printBoard(System.out);
+          System.out.println("Light wins!");
+          break;
+        }
       } else {
         if(darkHuman) {
           System.out.print("Dark move: ");
@@ -223,18 +231,15 @@ class Main {
           gameOver = s.move(move.xSource, move.ySource, move.xDest, move.yDest);
           lightPlayer = !lightPlayer;
         }
+
+        if(gameOver) {
+          System.out.println();
+          System.out.println();
+          s.printBoard(System.out);
+          System.out.println("Dark wins!");
+          break;
+        }
       }
-
-      if(gameOver) break;
-    }
-
-    System.out.println();
-    System.out.println();
-    s.printBoard(System.out);
-    if(!lightPlayer) {  // Since the flag switches after a turn, we need to invert the victory speech
-      System.out.println("Light wins!");
-    } else {
-      System.out.println("Dark wins!");
     }
   }
 

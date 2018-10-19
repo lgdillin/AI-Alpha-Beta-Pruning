@@ -16,20 +16,24 @@ class ChessState {
 	public static final int WhiteMask = 8;
 	public static final int AllMask = 15;
 
-	static boolean gameOver = false;
+	boolean gameOver;
 
 	int[] m_rows;
 
 	ChessState() {
+		gameOver = false;
 		m_rows = new int[8];
 		resetBoard();
 	}
 
 	ChessState(ChessState that) {
+		gameOver = false;
 		m_rows = new int[8];
 		for(int i = 0; i < 8; i++)
 			this.m_rows[i] = that.m_rows[i];
 	}
+
+	boolean gameOver() { return gameOver; }
 
 	int getPiece(int col, int row) {
 		return (m_rows[row] >> (4 * col)) & PieceMask;
@@ -37,10 +41,6 @@ class ChessState {
 
 	boolean isWhite(int col, int row) {
 		return (((m_rows[row] >> (4 * col)) & WhiteMask) > 0 ? true : false);
-	}
-
-	boolean gameOver() {
-		return gameOver;
 	}
 
 	/// Sets the piece at location (col, row). If piece is None, then it doesn't
@@ -289,7 +289,6 @@ class ChessState {
 		setPiece(xSrc, ySrc, None, true);
 		if(target == King) {
 			gameOver = true;
-			
 			// If you take the opponent's king, remove all of the opponent's pieces. This
 			// makes sure that look-ahead strategies don't try to look beyond the end of
 			// the game (example: sacrifice a king for a king and some other piece.)
@@ -412,34 +411,11 @@ class ChessState {
 
 
 	public static void main(String[] args) {
-    // // Game usage
-    // Random r = new Random(123456);
-    // ChessState s = new ChessState();
-    // s.resetBoard();
-    // ChessMoveIterator it = s.iterator(true); // Iterate over all valid moves
-    // ChessState.ChessMove m = new ChessState.ChessMove(); // for the light player
-		//
-    // // Gameloop
-    // while(it.hasNext()) {
-    //   m = it.next();
-    // }
-		//
-		//
-    // s.move(m.xSource, m.ySource, m.xDest, m.yDest);
-    // int h = s.heuristic(r);
-    // s.printBoard(System.out);
-
-
 		ChessState s = new ChessState();
 		s.resetBoard();
 		s.printBoard(System.out);
 		System.out.println();
 		s.move(1/*B*/, 0/*1*/, 2/*C*/, 2/*3*/);
 		s.printBoard(System.out);
-		ChessState.ChessMoveIterator it = s.iterator(true);
-		while(it.hasNext()) {
-			ChessState.ChessMove m = it.next();
-			System.out.println(m.xSource + " " + m.ySource);
-		}
 	}
 }
