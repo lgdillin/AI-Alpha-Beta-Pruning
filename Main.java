@@ -10,7 +10,7 @@ class Main {
     r = new Random(123456);
   }
 
-  int alphaBetaPruning(ChessState s, int depth, int alpha, int beta, boolean maximizeUtility, boolean light) {
+  int miniMax(ChessState s, int depth, boolean maximizeUtility) {
     int score = s.heuristic(r);
     if(depth == 0 || s.gameOver()) return score;
 
@@ -19,7 +19,7 @@ class Main {
       bestValue = -1000000; // Supposed to be neg inf
 
       // Find all movable pieces for dark
-      ChessState.ChessMoveIterator it = s.iterator(light);
+      ChessState.ChessMoveIterator it = s.iterator(true);
       while(it.hasNext()) {
         // Get the next piece
         ChessState.ChessMove m = it.next();
@@ -30,7 +30,52 @@ class Main {
         // Move the next piece to its legal destination
         newBoard.move(m.xSource, m.ySource, m.xDest, m.yDest);
 
-        bestValue = Math.max(bestValue, alphaBetaPruning(newBoard, depth - 1, alpha, beta, !maximizeUtility, !light));
+        bestValue = Math.max(bestValue, miniMax(newBoard, depth - 1, false));
+      }
+      return bestValue;
+
+    } else { // Minimizing player
+      bestValue = 1000000; // positive inf
+
+      // Find all movable pieces for light
+      ChessState.ChessMoveIterator it = s.iterator(false);
+      while(it.hasNext()) {
+        ChessState.ChessMove m = it.next(); // Get the next piece
+
+        // Deep copy the board
+        ChessState newBoard = new ChessState(s);
+
+        // Move the next piece to its legal destination
+        newBoard.move(m.xSource, m.ySource, m.xDest, m.yDest);
+
+        bestValue = Math.min(bestValue, miniMax(newBoard, depth - 1, true));
+      }
+      return bestValue;
+
+    }
+  }
+
+  int alphaBetaPruning(ChessState s, int depth, int alpha, int beta, boolean maximizeUtility) {
+    int score = s.heuristic(r);
+    if(depth == 0 || s.gameOver()) return score;
+
+    int bestValue;
+    if(maximizeUtility) {
+      bestValue = -1000000; // Supposed to be neg inf
+
+      // Find all movable pieces for dark
+      ChessState.ChessMoveIterator it = s.iterator(true);
+      while(it.hasNext()) {
+        // Get the next piece
+        ChessState.ChessMove m = it.next();
+
+        // Deep copy the board
+        ChessState newBoard = new ChessState(s);
+
+        // Move the next piece to its legal destination
+        newBoard.move(m.xSource, m.ySource, m.xDest, m.yDest);
+
+        bestValue = Math.max(bestValue, alphaBetaPruning(newBoard, depth - 1, alpha, beta, false));
 
         // compare to our level
         alpha = Math.max(alpha, bestValue);
@@ -42,7 +87,7 @@ class Main {
       bestValue = 1000000; // positive inf
 
       // Find all movable pieces for light
-      ChessState.ChessMoveIterator it = s.iterator(light);
+      ChessState.ChessMoveIterator it = s.iterator(false);
       while(it.hasNext()) {
         ChessState.ChessMove m = it.next(); // Get the next piece
 
@@ -52,7 +97,7 @@ class Main {
         // Move the next piece to its legal destination
         newBoard.move(m.xSource, m.ySource, m.xDest, m.yDest);
 
-        bestValue = Math.min(bestValue, alphaBetaPruning(newBoard, depth - 1, alpha, beta, !maximizeUtility, !light));
+        bestValue = Math.min(bestValue, alphaBetaPruning(newBoard, depth - 1, alpha, beta, true));
 
         beta = Math.min(beta, bestValue);
         if(alpha >= beta) break;
@@ -66,7 +111,11 @@ class Main {
   ChessState.ChessMove bestMove(ChessState s, boolean light, int lookAhead) {
     int alpha = -1000000;
     int beta = 1000000;
-    int maxUtility = -100000;
+    int maxUtility = 0;
+    if(light) maxUtility = -100000; // White wants the highest score
+    else maxUtility = 100000; // Black wants the lowest score
+
+
     ChessState.ChessMove maxMove = new ChessState.ChessMove();
 
     ChessState.ChessMoveIterator it = s.iterator(light);
@@ -82,11 +131,19 @@ class Main {
       newBoard.move(m.xSource, m.ySource, m.xDest, m.yDest);
 
       // Test for utility
-      int utility = alphaBetaPruning(newBoard, lookAhead, alpha, beta, false, !light);
+      int utility = alphaBetaPruning(newBoard, lookAhead, alpha, beta, !light);
+      //int utility = miniMax(newBoard, lookAhead, !light);
 
-      if(utility > maxUtility) {
-        maxMove = m;
-        maxUtility = utility;
+      if(light) { // Play for white
+        if(utility > maxUtility) {
+          maxMove = m;
+          maxUtility = utility;
+        }
+      } else { // play for black
+        if(utility < maxUtility) {
+          maxMove = m;
+          maxUtility = utility;
+        }
       }
     }
     // return the best move
